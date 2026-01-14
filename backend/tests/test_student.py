@@ -1,9 +1,7 @@
 from starlette import status
 from main import app
-from models import  Task, TaskStatus
 from routers.auth import get_current_user
 from .utils import *
-
 
 
 def test_update_task_status_student_authorised(client, test_task):
@@ -21,12 +19,11 @@ def test_update_task_status_student_authorised(client, test_task):
     assert updated_task.task_status == TaskStatus.COMPLETED
 
 
-def test_get_tasks_student_authorised(client, test_task):
+def test_get_tasks_student_authorised(client, test_task, test_teacher):
     app.dependency_overrides[get_current_user] = override_get_current_user_student
     response = client.get("/student/")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    
     assert any(task["task"] == "Initial Homework" for task in data)
 
 
@@ -45,7 +42,7 @@ def test_get_tasks_with_teacher_filter_student_authorised(client, test_task):
     data = response.json()
     assert all(task["teacher_id"] == test_task.teacher_id for task in data)
 
-#-------------------Teacher Unauthorised-----------------
+# ------------------- Teacher Unauthorised -----------------
 def test_update_task_status_teacher_unauthorised(client, test_task):
     app.dependency_overrides[get_current_user] = override_get_current_user_teacher
     response = client.patch(
@@ -53,7 +50,6 @@ def test_update_task_status_teacher_unauthorised(client, test_task):
         params={"new_status": "COMPLETED"}
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
-  
 
 
 def test_get_tasks_teacher_unauthorised(client, test_task):

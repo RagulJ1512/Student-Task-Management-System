@@ -75,15 +75,40 @@ async def delete_task(task_id:int,db:db_dependency,user:user_dependency):
 
 # get task advanced filtering
 @router.get("/", status_code=status.HTTP_200_OK)
-async def get_tasks(user:user_dependency,db:db_dependency,status_filter:Optional[TaskStatus]=None,student_id:Optional[int]=None):
-    if user.get("user_role") != UserRole.TEACHER: 
+async def get_tasks(
+    user: user_dependency,
+    db: db_dependency,
+    status_filter: Optional[TaskStatus] = None,
+    student_id: Optional[int] = None
+):
+    if user.get("user_role") != UserRole.TEACHER:
         raise HTTPException(status_code=403, detail="Only teachers can perform this operation")
-    query = db.query(Task).filter(Task.teacher_id==user["id"])
+
+    query = (
+        db.query(Task, Users.first_name, Users.last_name)
+        .join(Users, Task.student_id == Users.id)
+        .filter(Task.teacher_id == user["id"])
+    )
+
     if status_filter:
-        query.filter(Task.task_status==status_filter)
+        query = query.filter(Task.task_status == status_filter)
     if student_id:
-        query = db.query(Users).filter(Users.id == student_id, Users.role == UserRole.STUDENT).first() 
-    return query.all()
+        query = query.filter(Task.student_id == student_id)
+
+    results = query.all()
+
+    return [
+        {
+            "id": task.id,
+            "task": task.task,
+            "description": task.description,
+            "task_status": task.task_status,
+            "student_id": task.student_id,
+            "student_name": f"{fname} {lname}"
+        }
+        for task, fname, lname in results
+    ]
+
 
 
 #get student
