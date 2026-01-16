@@ -8,8 +8,12 @@ from schemas import TaskStatus, UserRole
 from database import Base, get_db
 from main import app
 from routers.auth import bcrypt_context
+from dotenv import load_dotenv 
+import os
 
-TEST_DATABASE_URL = "sqlite:///./testdb.db"
+load_dotenv()
+
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 
 engine = create_engine(
     TEST_DATABASE_URL,
